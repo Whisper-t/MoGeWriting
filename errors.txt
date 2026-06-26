@@ -1,0 +1,42 @@
+src/components/ShortcutGuide.vue:177:            :title="recordingKey === key ? '?Esc 取消' : '点击修改快捷?"
+src/components/ShortcutGuide.vue:183:              {{ currentKeys.length ? currentKeys.join('+') : '请按下快捷键...' }}
+src/components/TimelineView.vue:9:  /** 选择一篇随?*/
+src/components/TimelineView.vue:21:  const chapters = workspace.bookIndex?.chapters ?? []
+src/components/TimelineView.vue:25:    return sortAsc.value ? dateA - dateB : dateB - dateA
+src/components/TimelineView.vue:30:/** 按年份分?*/
+src/components/TimelineView.vue:46:function formatDate(dateStr?: string): string {
+src/components/TimelineView.vue:56:function formatTime(dateStr?: string): string {
+src/components/TimelineView.vue:82:        :title="sortAsc ? '降序' : '升序'"
+src/components/TimelineView.vue:84:        {{ sortAsc ? '⬆' : '⬇' }}
+src/components/TimelineView.vue:106:          :class="{ active: workspace.selectedChapter?.id === item.id }"
+src/components/TimelineView.vue:119:              {{ item.word_count.toLocaleString() }} ?            </div>
+src/components/TimelineView.vue:229:/* 时间线条?*/
+src/components/TiptapEditor.vue:35:  /** 编辑器内容（Markdown 格式?*/
+src/components/TiptapEditor.vue:39:  /** 当前编辑的文件路?*/
+src/components/TiptapEditor.vue:43:  /** 是否显示稿纸网格?*/
+src/components/TiptapEditor.vue:51:  /** 内容变化时触发，传?Markdown 格式 */
+src/components/TiptapEditor.vue:59:  /** 编辑器就?*/
+src/components/TiptapEditor.vue:69:// ?Markdown 转为 HTML 用于编辑器显?// 流程：Markdown ?HTML ?注释?span + 提取批注数据
+src/components/TiptapEditor.vue:151:    emit('wordCount', editor.storage.characterCount?.characters() ?? 0)
+src/components/TiptapEditor.vue:266:  editor.value?.destroy()
+src/components/TiptapEditor.vue:270:// ========== 悬停联动：侧边栏卡片 ?编辑器批注文?==========
+src/components/TiptapEditor.vue:302:// ========== 暴露给父组件的方?==========
+src/components/TiptapEditor.vue:304:/** 在当前选中文字上添加批?*/
+src/components/TiptapEditor.vue:320:  // ?store 中记录批注，必须先执行以?onUpdate 同步触发时找不到数据
+src/components/TiptapEditor.vue:324:  // 应用 annotation mark，这会同步触?onUpdate
+src/components/TiptapEditor.vue:332:/** 移除当前光标位置的批?*/
+src/components/TiptapEditor.vue:388:          // 选中该文?          editor.value!.chain().focus().setTextSelection({ from: pos, to: pos + node.nodeSize }).run()
+src/components/TiptapEditor.vue:395:            const el = dom.node.nodeType === Node.TEXT_NODE ? dom.node.parentElement : dom.node as HTMLElement
+src/components/TiptapEditor.vue:397:            el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+src/components/TiptapEditor.vue:467:   Tiptap 编辑器样?   极简设计，专注于中文写作体验
+src/components/TiptapEditor.vue:483:/* 稿纸网格线（应用于编辑器容器?*/
+src/components/TiptapEditor.vue:615:/* 标题后的第一段保持缩?*/
+src/components/TiptapEditor.vue:661:/* ========== 引用?========== */
+src/components/TiptapEditor.vue:773:/* ========== 分割?========== */
+src/components/TiptapEditor.vue:787:/* ========== 占位?========== */
+src/components/TiptapEditor.vue:881:/* 侧边栏中高亮对应的批?*/
+src/views/EditorView.vue:120:  tiptapRef.value?.scrollToAnnotation(annotationId)
+src/views/EditorView.vue:200:            {{ workspace.selectedChapter?.title || workspace.currentWorkspace.name }}
+src/views/EditorView.vue:236:            :title="showThemeSettings ? '关闭排版设置' : '排版设置'"
+src/views/EditorView.vue:250:            :title="showInspector ? '关闭灵感面板' : '灵感面板'"
+src/views/EditorView.vue:259:            {{ editor.saving ? '保存中…' : '保存' }}

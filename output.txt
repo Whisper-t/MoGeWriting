@@ -1,0 +1,71 @@
+src/components/ExportDialog.vue:25 - const bookName = computed(() => workspace.bookIndex?.name || '未命名')
+src/components/ExportDialog.vue:27 - const bookType = computed(() => workspace.bookIndex?.type || '随笔')
+src/components/ExportDialog.vue:73 - exportStatus.value = `?TXT 已导出到?{filePath}`
+src/components/ExportDialog.vue:77 - exportStatus.value = `?导出失败?{e}`
+src/components/ExportDialog.vue:131 - exportStatus.value = `?ZIP 备份已导出到?{filePath}`
+src/components/ExportDialog.vue:135 - exportStatus.value = `?导出失败?{e}`
+src/components/ExportDialog.vue:157 - // 收集所有章节内?    const chapters = collectChapters()
+src/components/ExportDialog.vue:191 - exportStatus.value = `?生成失败?{e}`
+src/components/ExportDialog.vue:235 - const author = workspace.bookIndex?.author || '佚名'
+src/components/ExportDialog.vue:237 - const description = workspace.bookIndex?.description || ''
+src/components/ExportDialog.vue:433 - ${description ? `<p class="description">${escapeHtml(description)}</p>` : ''}
+src/components/ExportDialog.vue:447 - // 简单的 Markdown ?HTML 转换（用于打印）
+src/components/ExportDialog.vue:453 - html = html.replace(/<!--inspiration:[\s\S]*?-->[\s\S]*?<!--\/inspiration-->/g, '')
+src/components/ExportDialog.vue:455 - html = html.replace(/<!--[\s\S]*?-->/g, '')
+src/components/ExportDialog.vue:469 - html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+src/components/ExportDialog.vue:471 - html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+src/components/ExportDialog.vue:473 - html = html.replace(/\*(.+?)\*/g, '<em>$1</em>')
+src/components/ExportDialog.vue:479 - // 分割?  html = html.replace(/^---$/gm, '<hr>')
+src/components/ExportDialog.vue:487 - // 清理空段?  html = html.replace(/<p>\s*<\/p>/g, '')
+src/components/ExportDialog.vue:501 - // ?HTML 写入临时文件
+src/components/ExportDialog.vue:519 - // 使用系统默认浏览器打开?HTML 文件
+src/components/ExportDialog.vue:525 - exportStatus.value = `?打开打印页面失败?{e}`
+src/components/ExportDialog.vue:577 - const selectedPath = typeof filePath === 'string' ? filePath : (filePath as { path: string }).path
+src/components/ExportDialog.vue:619 - <button class="close-btn" @click="$emit('close')">?/button>
+src/components/ExportDialog.vue:645 - <span class="option-desc">按章节顺序合并，清洗灵感标记?Markdown 语法</span>
+src/components/ExportDialog.vue:659 - <span class="option-desc">A5 出版级排版，章节自动分页，页眉页?/span>
+src/components/ExportDialog.vue:673 - <span class="option-desc">打包所?.md 文件、book.json 和历史快?/span>
+src/components/ExportDialog.vue:685 - <span class="option-title">从备份恢?/span>
+src/components/ExportDialog.vue:687 - <span class="option-desc">选择 ZIP 文件，覆盖当前作品数?/span>
+src/components/ExportDialog.vue:695 - <!-- 状态消?-->
+src/components/ExportDialog.vue:697 - <div v-if="exportStatus" class="export-status" :class="{ error: exportStatus.startsWith('?) || exportStatus.startsWith('⚠️') }">
+src/components/ExportDialog.vue:707 - <p>⚠️ 恢复操作将覆盖当前所有文件，此操作不可撤销?/p>
+src/components/HistoryPanel.vue:183 - <span class="chapter-name">{{ workspace.selectedChapter?.title || '' }}</span>
+src/components/HistoryPanel.vue:185 - <button class="close-btn" @click="$emit('close')">?/button>
+src/components/HistoryPanel.vue:191 - <!-- 左侧：快照列?-->
+src/components/HistoryPanel.vue:195 - <div v-if="loading" class="loading-state">加载中?/div>
+src/components/HistoryPanel.vue:215 - :class="{ active: previewingSnapshot?.filename === snap.filename }"
+src/components/HistoryPanel.vue:241 - <p>?选择一个历史版本进行预?/p>
+src/components/HistoryPanel.vue:261 - {{ restoring ? '恢复中? : '🔄 恢复此版? }}
+src/components/HistoryPanel.vue:271 - <div v-if="statusMsg" class="status-msg" :class="{ error: statusMsg.startsWith('?) }">
+src/components/TiptapEditor.vue:35 - /** 编辑器内容（Markdown 格式?*/
+src/components/TiptapEditor.vue:39 - /** 当前编辑的文件路?*/
+src/components/TiptapEditor.vue:43 - /** 是否显示稿纸网格?*/
+src/components/TiptapEditor.vue:51 - /** 内容变化时触发，传?Markdown 格式 */
+src/components/TiptapEditor.vue:59 - /** 编辑器就?*/
+src/components/TiptapEditor.vue:69 - // ?Markdown 转为 HTML 用于编辑器显?// 流程：Markdown ?HTML ?注释?span + 提取批注数据
+src/components/TiptapEditor.vue:138 - // 获取编辑?HTML（含 annotation span?    const editorHtml = editor.getHTML()
+src/components/TiptapEditor.vue:140 - // ?annotation span 转为灵感注释
+src/components/TiptapEditor.vue:150 - emit('wordCount', editor.storage.characterCount?.characters() ?? 0)
+src/components/TiptapEditor.vue:162 - // 编辑器容器引?const editorWrapper = ref<HTMLElement | null>(null)
+src/components/TiptapEditor.vue:172 - // 为了让底部对齐网格线，我们需要让第一条网格线恰好出现在第一行文字的底部?  // 一行的高度?fontSize * lineHeight
+src/components/TiptapEditor.vue:174 - // 所以偏移量?paddingTop + fontSize * lineHeight
+src/components/TiptapEditor.vue:182 - // 监听外部内容变化（切换文件时?watch(
+src/components/TiptapEditor.vue:262 - editor.value?.destroy()
+src/components/TiptapEditor.vue:266 - // ========== 悬停联动：侧边栏卡片 ?编辑器批注文?==========
+src/components/TiptapEditor.vue:298 - // ========== 暴露给父组件的方?==========
+src/components/TiptapEditor.vue:300 - /** 在当前选中文字上添加批?*/
+src/components/TiptapEditor.vue:316 - // ?store 中记录批注，必须先执行以?onUpdate 同步触发时找不到数据
+src/components/TiptapEditor.vue:320 - // 应用 annotation mark，这会同步触?onUpdate
+src/components/TiptapEditor.vue:328 - /** 移除当前光标位置的批?*/
+src/components/TiptapEditor.vue:384 - // 选中该文?          editor.value!.chain().focus().setTextSelection({ from: pos, to: pos + node.nodeSize }).run()
+src/components/TiptapEditor.vue:386 - // 滚动到视?          const dom = editor.value!.view.domAtPos(pos)
+src/components/TiptapEditor.vue:390 - const el = dom.node.nodeType === Node.TEXT_NODE ? dom.node.parentElement : dom.node as HTMLElement
+src/components/TiptapEditor.vue:392 - el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+src/components/TiptapEditor.vue:462 - Tiptap 编辑器样?   极简设计，专注于中文写作体验
+src/components/TiptapEditor.vue:478 - /* 稿纸网格线（应用于编辑器容器?*/
+src/components/TiptapEditor.vue:610 - /* 标题后的第一段保持缩?*/
+src/components/TiptapEditor.vue:656 - /* ========== 引用?========== */
+src/components/TiptapEditor.vue:768 - /* ========== 分割?========== */
+src/components/TiptapEditor.vue:782 - /* ========== 占位?========== */
+src/components/TiptapEditor.vue:876 - /* 侧边栏中高亮对应的批?*/

@@ -1,0 +1,147 @@
+<script setup lang="ts">
+
+import { ref, watch, computed } from 'vue'
+
+import { useEditorStore } from '@/stores/editor'
+
+import { useWorkspaceStore } from '@/stores/workspace'
+
+import * as api from '@/composables/useTauriCommands'
+
+import type { HistorySnapshot } from '@/types'
+
+defineEmits<{
+
+  close: []
+
+}>()
+
+const editor = useEditorStore()
+
+const workspace = useWorkspaceStore()
+
+const snapshots = ref<HistorySnapshot[]>([])
+
+const loading = ref(false)
+
+const previewContent = ref('')
+
+const previewingSnapshot = ref<HistorySnapshot | null>(null)
+
+const restoring = ref(false)
+
+const statusMsg = ref('')
+
+// 当前文件路径
+
+const currentFilePath = computed(() => editor.currentFilePath)
+
+// 加载历史列表
+
+async function loadHistory() {
+
+  if (!currentFilePath.value) return
+
+  loading.value = true
+
+  try {
+
+    snapshots.value = await api.listHistory(currentFilePath.value)
+
+  } catch (e) {
+
+    console.error('Failed to load history:', e)
+
+    snapshots.value = []
+
+  } finally {
+
+    loading.value = false
+
+  }
+
+}
+
+// 预览快照
+async function previewSnapshot(snap: HistorySnapshot) {
+  previewingSnapshot.value = snap
+  try {
+    previewContent.value = await api.readHistorySnapshot(snap.path)
+  } catch (e) {
+    previewContent.value = `❌ 加载失败：${e}`
+  }
+}
+
+// 恢复快照
+async function restoreSnapshot(snap: HistorySnapshot) {
+  if (!currentFilePath.value) return
+  restoring.value = true
+  statusMsg.value = ''
+  try {
+    await editor.restoreFromSnapshot(snap.path)
+    statusMsg.value = '✅ 已恢复到该版本'
+    previewingSnapshot.value = null
+    previewContent.value = ''
+    await loadHistory()
+  } catch (e) {
+    statusMsg.value = `❌ 恢复失败：${e}`
+  } finally {
+    restoring.value = false
+  }
+}
+
+function closePreview() {
+
+  previewingSnapshot.value = null
+
+  previewContent.value = ''
+
+}
+
+function formatSize(bytes: number): string {
+
+  if (bytes < 1024) return `${bytes} B`
+
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+
+}
+
+function formatTimeAgo(timestamp: string): string {
+
+  const t = new Date(timestamp.replace(' ', 'T'))
+
+  const now = new Date()
+
+  const diffMs = now.getTime() - t.getTime()
+
+  const diffMin = Math.floor(diffMs / 60000)
+
+  if (diffMin < 1) return '刚刚'
+
+  if (diffMin < 60) return `${diffMin} 分钟前`
+
+  const diffHour = Math.floor(diffMin / 60)
+
+  if (diffHour < 24) return `${diffHour} 小时前`
+
+  const diffDay = Math.floor(diffHour / 24)
+
+  if (diffDay < 30) return `${diffDay} 天前`
+
+  return timestamp
+
+}
+
+// 初始加载
+
+watch(currentFilePath, () => {
+
+  loadHistory()
+
+  closePreview()
+
+}, { immediate: true })
+
+</script>

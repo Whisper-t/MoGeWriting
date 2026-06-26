@@ -1,0 +1,127 @@
+/* ============================================
+   极简本地码字软件 �?全局样式
+   坚守极简设计：无多余边框、无阴影、无复杂动画
+   ============================================ */
+
+:root {
+  /* 默认主题变量（会�?theme store 覆盖�?*/
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --surface-color: #f5f5f5;
+  --border-color: #e5e5e5;
+  --font-size: 16px;
+  --line-height: 2.0;
+  --letter-spacing: 0.5px;
+  --margin-left: 80px;
+  --margin-right: 80px;
+  --grid-line-height: 32px;
+  --accent-color: #333333;
+  --accent-hover: #000000;
+  --danger-color: #c0392b;
+  --sidebar-width: 260px;
+  --inspector-width: 300px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #app {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: "Noto Serif SC", "Source Han Serif SC", "SimSun", "宋体", serif;
+  font-size: var(--font-size);
+  line-height: var(--line-height);
+  color: var(--text-color);
+  background-color: var(--bg-color);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* 滚动�?- 极简细条，悬停才显现 */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 2px;
+  transition: background 0.2s;
+}
+*:hover::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-color);
+}
+
+/* 选中文字颜色 */
+::selection {
+  background: color-mix(in srgb, var(--accent-color) 20%, transparent);
+  color: inherit;
+}
+
+/* 按钮重置 */
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+  font-size: inherit;
+}
+
+/* 输入框重�?*/
+input, textarea {
+  font-family: inherit;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+}
+
+/* 链接 */
+a {
+  color: var(--accent-color);
+  text-decoration: none;
+}
+
+/* 图片拖拽禁用 */
+img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* 通用过渡 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* 聚焦�?- 仅供键盘导航时显�?*/
+:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* 禁用文本选择（UI 元素�?*/
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+}
