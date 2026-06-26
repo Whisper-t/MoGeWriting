@@ -52,6 +52,10 @@
 | 导出 PDF | A5 出版级排版，@page CSS 规则，章节自动分页 |
 | ZIP 备份 | 全量打包 .md + book.json + .history |
 | ZIP 恢复 | 从备份文件恢复全部数据 |
+| EPUB 导出 | 电子书格式，支持 Kindle、Apple Books |
+| 原子化保存 | 写临时文件→重命名，防断电丢稿 |
+| 软删除回收站 | .trash 目录，误删可恢复 |
+| 搜索替换 | Ctrl+F 内置查找/替换 |
 
 ---
 
@@ -103,6 +107,8 @@
 | `zip` | ZIP 压缩/解压 |
 | `uuid` | 唯一 ID 生成 |
 | `regex-lite` | TXT 导出正则清洗 |
+| `flate2` | 历史快照 gzip 压缩 |
+| `base64` | 封面图片 base64 编码 |
 | `dirs` | 用户主目录获取 |
 
 **前端 (package.json)**
@@ -187,7 +193,8 @@
 │           ├── mod.rs                  # 模块声明
 │           ├── workspace.rs            # 工作区 CRUD + book.json 引擎
 │           ├── file_io.rs              # 文件读写 + 历史快照
-│           └── history.rs              # TXT/ZIP 导出 + ZIP 恢复
+│           └── history.rs              # TXT/ZIP/EPUB 导出 + ZIP 恢复
+│           └── epub.rs                # EPUB 电子书构建
 │
 └── dist/                               # Vite 构建输出
 ```
@@ -426,6 +433,51 @@
 
 ---
 
+### 阶段六：体验增强与格式扩展
+
+**新增功能**：
+
+1. **原子化保存** (`commands/file_io.rs`)
+   - 新增 `atomic_write` 函数：写临时文件 → 重命名
+   - `write_file` 和 `write_files` 全部改用原子化写入
+   - 断电不丢稿，要么旧文件完整要么新文件完整
+
+2. **软删除回收站** (`commands/workspace.rs`)
+   - 新增 `move_to_trash` 函数：删除变为移动到 `.trash/`
+   - `delete_chapter`、`delete_volume`、`delete_workspace` 全部软删除
+   - 带时间戳防重名，误删可随时从 `.trash/` 恢复
+
+3. **搜索与替换** (`views/EditorView.vue`)
+   - `Ctrl+F` 打开搜索面板，`Escape` 关闭
+   - 实时匹配计数、上一个/下一个导航
+   - 替换当前 / 全部替换
+
+4. **EPUB 电子书导出** (`commands/epub.rs`)
+   - 完整 EPUB 2.0 标准实现
+   - ZIP 容器 + XHTML 内容 + OPF 清单 + NCX 目录
+   - 支持 Kindle、Apple Books、微信读书
+   - 导出对话框新增「EPUB」选项
+
+5. **在资源管理器中打开** (`commands/file_io.rs`)
+   - 新增 `open_in_explorer` 命令
+   - 编辑器顶栏 `◰` 按钮打开当前书籍文件夹
+   - 首页 `◰ 目录` 按钮打开存储根目录
+
+6. **历史快照压缩** (`commands/file_io.rs`)
+   - 快照保存为 `.md.gz` 格式，使用 gzip 压缩
+   - 读取时自动解压，兼容旧版 `.md` 快照
+   - 恢复时自动解压或直接复制
+
+7. **图标统一与文字修正**
+   - 全部 emoji 图标替换为极简单字符 Unicode 符号
+   - 省略号 `...` 替换为排版正确的 `…`
+   - 状态图标统一：`✓` / `✗` / `⚠`
+
+**新增文件**：`commands/epub.rs`
+**更新文件**：`commands/file_io.rs`、`commands/workspace.rs`、`commands/history.rs`、`lib.rs`、`views/EditorView.vue`、`views/HomeView.vue`、`components/ExportDialog.vue`、`components/BookInfoEditor.vue`、`components/Sidebar.vue`、`components/InspectorPanel.vue`、`components/HistoryPanel.vue`、`components/ShortcutGuide.vue`、`components/TiptapEditor.vue`、`stores/editor.ts`、`composables/useMarkdown.ts`、`styles/global.css`
+
+---
+
 ## 五、数据存储规范
 
 ### 目录结构
@@ -437,10 +489,10 @@
 │   ├── 第一章.md                # 正文（纯 Markdown）
 │   ├── 第二章.md
 │   ├── 第三章.md
-│   └── .history/                # 隐藏历史快照
-│       ├── 第一章_20260101_120000.md
-│       ├── 第一章_20260101_121500.md
-│       └── 第二章_20260101_130000.md
+│   ├── .trash/                  # 回收站（软删除文件）
+│   └── .history/                # 隐藏历史快照（gzip 压缩）
+│       ├── 第一章_20260101_120000.md.gz
+│       └── 第一章_20260101_121500.md.gz
 │
 ├── 随笔集/
 │   ├── book.json
@@ -496,6 +548,7 @@
 | 快捷键 | 作用域 | 功能 |
 |---|---|---|
 | `Ctrl+S` | 编辑器 | 保存当前文件 |
+| `Ctrl+F` | 编辑器 | 打开搜索替换面板 |
 | `Ctrl+Shift+A` | 编辑器 | 选中文字添加灵感批注 |
 | `Ctrl+Shift+E` | 编辑器 | 打开导出/备份对话框 |
 | `F11` | 编辑器 | 切换专注模式（隐藏所有 UI） |

@@ -1,13 +1,13 @@
+use crate::models::*;
+use base64::Engine;
+use flate2::read::GzDecoder;
+use flate2::write::GzEncoder;
+use flate2::Compression;
 use std::fs;
 use std::io::Read;
-use std::path::Path;
 use std::io::Write;
-use flate2::write::GzEncoder;
-use flate2::read::GzDecoder;
-use flate2::Compression;
+use std::path::Path;
 use tauri::command;
-use base64::Engine;
-use crate::models::*;
 
 /// 在默认浏览器中打开 HTML 文件（用于 PDF 打印）
 #[command]
@@ -108,7 +108,11 @@ pub fn get_file_info(path: String) -> Result<DirEntry, String> {
             .to_string(),
         path: path.clone(),
         is_dir: metadata.is_dir(),
-        size: if metadata.is_file() { Some(metadata.len()) } else { None },
+        size: if metadata.is_file() {
+            Some(metadata.len())
+        } else {
+            None
+        },
         modified_at: metadata.modified().ok().map(|t| {
             chrono::DateTime::<chrono::Local>::from(t)
                 .format("%Y-%m-%dT%H:%M:%S")
@@ -141,10 +145,13 @@ fn save_history_snapshot(file_path: &Path) -> Result<(), String> {
 
     // 读取原文件并压缩写入
     let content = fs::read(file_path).map_err(|e| e.to_string())?;
-    let out_file = fs::File::create(&snapshot_path).map_err(|e| e.to_string())?;
-    let mut encoder = GzEncoder::new(out_file, Compression::default());
+    // 先在内存里完成压缩
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
     encoder.write_all(&content).map_err(|e| e.to_string())?;
-    encoder.finish().map_err(|e| e.to_string())?;
+    let compressed_data = encoder.finish().map_err(|e| e.to_string())?;
+
+    // 然后通过原子化写入保存压缩后的数据
+    atomic_write(&snapshot_path, compressed_data)?;
 
     Ok(())
 }
@@ -180,10 +187,16 @@ pub fn list_history(file_path: String) -> Result<Vec<HistorySnapshot>, String> {
         let entry = entry.map_err(|e| e.to_string())?;
         let name = entry.file_name().to_string_lossy().to_string();
         // 匹配以章节名开头的快照文件
-        if name.starts_with(&format!("{}_", stem)) && (name.ends_with(".md") || name.ends_with(".md.gz")) {
+        if name.starts_with(&format!("{}_", stem))
+            && (name.ends_with(".md") || name.ends_with(".md.gz"))
+        {
             let metadata = entry.metadata().map_err(|e| e.to_string())?;
             // 从文件名中提取时间戳
-            let ext = if name.ends_with(".md.gz") { ".md.gz" } else { ".md" };
+            let ext = if name.ends_with(".md.gz") {
+                ".md.gz"
+            } else {
+                ".md"
+            };
             let ts_part = name
                 .strip_prefix(&format!("{}_", stem))
                 .unwrap_or("")
@@ -210,7 +223,9 @@ pub fn read_history_snapshot(snapshot_path: String) -> Result<String, String> {
         let file = fs::File::open(&snapshot_path).map_err(|e| e.to_string())?;
         let mut decoder = GzDecoder::new(file);
         let mut string = String::new();
-        decoder.read_to_string(&mut string).map_err(|e| e.to_string())?;
+        decoder
+            .read_to_string(&mut string)
+            .map_err(|e| e.to_string())?;
         Ok(string)
     } else {
         fs::read_to_string(&snapshot_path).map_err(|e| e.to_string())
@@ -237,7 +252,9 @@ pub fn restore_snapshot(snapshot_path: String, target_path: String) -> Result<()
         let file = fs::File::open(snapshot).map_err(|e| e.to_string())?;
         let mut decoder = GzDecoder::new(file);
         let mut content = Vec::new();
-        decoder.read_to_end(&mut content).map_err(|e| e.to_string())?;
+        decoder
+            .read_to_end(&mut content)
+            .map_err(|e| e.to_string())?;
         fs::write(target, &content).map_err(|e| e.to_string())?;
     } else {
         fs::copy(snapshot, target).map_err(|e| e.to_string())?;
@@ -279,4 +296,36 @@ pub fn set_cover_image(book_path: String, image_path: String) -> Result<String, 
     fs::copy(src, &dest).map_err(|e| e.to_string())?;
 
     Ok(cover_filename)
+}
+// ========== 原子化写入 (Atomic Write) ==========
+
+/// 执行带 fsync 的原子化写入，彻底防丢稿
+fn atomic_write(path: &Path, content: impl AsRef<[u8]>) -> Result<(), String> {
+    let parent = path.parent().unwrap_or_else(|| Path::new(""));
+    if !parent.exists() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+
+    let temp_name = format!(
+        "{}.tmp.{}",
+        path.file_name().unwrap_or_default().to_string_lossy(),
+        uuid::Uuid::new_v4()
+    );
+    let temp_path = parent.join(&temp_name);
+
+    // 1. 写入临时文件
+    let mut file = fs::File::create(&temp_path).map_err(|e| e.to_string())?;
+    file.write_all(content.as_ref())
+        .map_err(|e| e.to_string())?;
+
+    // 2. 强制物理落盘 (fsync)
+    file.sync_all().map_err(|e| e.to_string())?;
+
+    // 必须 drop 文件句柄，否则 Windows 下 rename 会报权限被占用的错误
+    drop(file);
+
+    // 3. 原子重命名覆盖原文件
+    fs::rename(&temp_path, path).map_err(|e| e.to_string())?;
+
+    Ok(())
 }
