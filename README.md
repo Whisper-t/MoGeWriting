@@ -80,7 +80,7 @@ npm run tauri build  # 生产构建（Windows 安装包）
 ## 数据存储
 
 ```
-用户主目录/SelfWriting/
+用户主目录/MoGeWriting/
 ├── 我的小说/
 │   ├── book.json              # 索引文件（排序、元数据）
 │   ├── 第一章.md               # 纯 Markdown 正文

@@ -11,9 +11,9 @@ onMounted(async () => {
   theme.applyTheme()
   try {
     const homeDir = await invoke<string>('get_home_dir')
-    await workspace.init(`${homeDir}\\SelfWriting`)
+    await workspace.init(`${homeDir}\\MoGeWriting`)
   } catch {
-    await workspace.init('C:\\Users\\Default\\SelfWriting')
+    await workspace.init('C:\\Users\\Default\\MoGeWriting')
   }
 })
 </script>
