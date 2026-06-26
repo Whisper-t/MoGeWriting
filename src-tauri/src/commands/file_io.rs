@@ -55,13 +55,8 @@ pub fn read_file(path: String) -> Result<String, String> {
 pub fn write_file(request: SaveRequest) -> Result<(), String> {
     let file_path = Path::new(&request.path);
 
-    // 确保父目录存在
-    if let Some(parent) = file_path.parent() {
-        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-    }
-
-    // 原子化写入：先写临时文件，再重命名
-    atomic_write(file_path, request.content.as_bytes())?;
+    // 原子化写入（已包含目录创建 + fsync）
+    atomic_write(file_path, &request.content)?;
 
     // 触发历史快照
     save_history_snapshot(file_path)?;
@@ -74,25 +69,10 @@ pub fn write_file(request: SaveRequest) -> Result<(), String> {
 pub fn write_files(requests: Vec<SaveRequest>) -> Result<(), String> {
     for req in requests {
         let file_path = Path::new(&req.path);
-        if let Some(parent) = file_path.parent() {
-            fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-        }
-        atomic_write(file_path, req.content.as_bytes())?;
+        atomic_write(file_path, &req.content)?;
         save_history_snapshot(file_path)?;
     }
     Ok(())
-}
-
-/// 原子化写入：先写 .tmp 文件，再重命名替换原文件
-/// POSIX rename() 是原子操作，保证不会出现半写状态
-fn atomic_write(target: &Path, data: &[u8]) -> Result<(), String> {
-    let tmp_path = target.with_extension("tmp");
-    fs::write(&tmp_path, data).map_err(|e| e.to_string())?;
-    fs::rename(&tmp_path, target).map_err(|e| {
-        // 重命名失败时清理临时文件
-        let _ = fs::remove_file(&tmp_path);
-        e.to_string()
-    })
 }
 
 /// 获取文件信息
@@ -152,6 +132,101 @@ fn save_history_snapshot(file_path: &Path) -> Result<(), String> {
 
     // 然后通过原子化写入保存压缩后的数据
     atomic_write(&snapshot_path, compressed_data)?;
+
+    // 触发垃圾回收：清理过期快照
+    prune_history(&book_root, &stem)?;
+
+    Ok(())
+}
+
+/// 垃圾回收：按时间梯级清理过期历史快照
+/// 策略：
+///   - 最近 1 小时：全部保留
+///   - 1～24 小时：每小时保留 1 个
+///   - 1～7 天：每天保留 1 个
+///   - 7～30 天：每周保留 1 个
+///   - 30 天以上：每月保留 1 个
+///   - 每个文件最多保留 100 个快照
+fn prune_history(book_root: &Path, stem: &str) -> Result<(), String> {
+    let history_dir = book_root.join(".history");
+    if !history_dir.exists() {
+        return Ok(());
+    }
+
+    // 收集该文件的所有快照
+    let mut entries: Vec<(String, std::path::PathBuf, chrono::NaiveDateTime)> = Vec::new();
+    for entry in fs::read_dir(&history_dir).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let name = entry.file_name().to_string_lossy().to_string();
+        if !name.starts_with(&format!("{}_", stem)) {
+            continue;
+        }
+        if !name.ends_with(".md") && !name.ends_with(".md.gz") {
+            continue;
+        }
+        // 解析时间戳
+        let ext = if name.ends_with(".md.gz") { ".md.gz" } else { ".md" };
+        let ts_part = name
+            .strip_prefix(&format!("{}_", stem))
+            .unwrap_or("")
+            .strip_suffix(ext)
+            .unwrap_or("");
+        if let Ok(ts) = chrono::NaiveDateTime::parse_from_str(ts_part, "%Y%m%d_%H%M%S") {
+            entries.push((name, entry.path(), ts));
+        }
+    }
+
+    // 按时间降序排列（最新的在前）
+    entries.sort_by(|a, b| b.2.cmp(&a.2));
+
+    let now = chrono::Local::now().naive_local();
+    let mut kept = 0usize;
+    let mut last_hour_bucket = String::new();
+    let mut last_day_bucket = String::new();
+    let mut last_week_bucket = String::new();
+    let mut last_month_bucket = String::new();
+    const MAX_SNAPSHOTS: usize = 100;
+
+    for (_name, path, ts) in &entries {
+        let age_hours = (now - *ts).num_hours();
+        let age_days = (now - *ts).num_days();
+
+        let should_keep = if age_hours < 1 {
+            // 1 小时内：全部保留
+            true
+        } else if age_hours < 24 {
+            // 1～24 小时：每小时保留 1 个
+            let bucket = ts.format("%Y%m%d_%H").to_string();
+            let keep = bucket != last_hour_bucket;
+            if keep { last_hour_bucket = bucket; }
+            keep
+        } else if age_days < 7 {
+            // 1～7 天：每天保留 1 个
+            let bucket = ts.format("%Y%m%d").to_string();
+            let keep = bucket != last_day_bucket;
+            if keep { last_day_bucket = bucket; }
+            keep
+        } else if age_days < 30 {
+            // 7～30 天：每周保留 1 个
+            let bucket = ts.format("%Y_W%W").to_string();
+            let keep = bucket != last_week_bucket;
+            if keep { last_week_bucket = bucket; }
+            keep
+        } else {
+            // 30 天以上：每月保留 1 个
+            let bucket = ts.format("%Y%m").to_string();
+            let keep = bucket != last_month_bucket;
+            if keep { last_month_bucket = bucket; }
+            keep
+        };
+
+        if should_keep && kept < MAX_SNAPSHOTS {
+            kept += 1;
+        } else {
+            // 删除此快照
+            let _ = fs::remove_file(path);
+        }
+    }
 
     Ok(())
 }
